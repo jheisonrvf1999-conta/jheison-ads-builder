@@ -40,13 +40,14 @@ export function CampaignWizard() {
   // Step 1 → 2
   function handleAnalysisDone(
     result: PageAnalysisResult,
-    url: string,
+    destinationUrl: string,
+    analysisUrl: string,
     _country: string,
     _language: string
   ) {
     setAnalysis(result)
-    setSourceUrl(url)
-    setSummary(buildInitialSummary(result, url))
+    setSourceUrl(analysisUrl)
+    setSummary(buildInitialSummary(result, destinationUrl))
     setStep(2)
   }
 

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, Globe, Search, ArrowRight } from 'lucide-react'
+import { Loader2, Globe, Search, Link } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,10 +19,14 @@ import {
 import type { PageAnalysisResult } from '@/types'
 
 const schema = z.object({
-  url: z
+  destinationUrl: z
     .string()
     .min(1, 'URL obrigatória')
-    .url('Insira uma URL válida (ex: https://produto.com.br)'),
+    .url('Insira uma URL válida (ex: https://centralpaginaoficial.com/go/comprar)'),
+  analysisUrl: z
+    .string()
+    .min(1, 'URL obrigatória')
+    .url('Insira uma URL válida (ex: https://ozenvitta.com.br)'),
   country: z.string().min(1, 'Selecione o país'),
   language: z.string().min(1, 'Selecione o idioma'),
 })
@@ -46,13 +50,12 @@ const LANGUAGES = [
 ]
 
 interface StepUrlProps {
-  onComplete: (result: PageAnalysisResult, url: string, country: string, language: string) => void
+  onComplete: (result: PageAnalysisResult, destinationUrl: string, analysisUrl: string, country: string, language: string) => void
 }
 
 export function StepUrl({ onComplete }: StepUrlProps) {
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
-  const [salesPageUrl, setSalesPageUrl] = useState<string | null>(null)
 
   const {
     register,
@@ -62,7 +65,7 @@ export function StepUrl({ onComplete }: StepUrlProps) {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { url: '', country: 'BR', language: 'pt-BR' },
+    defaultValues: { destinationUrl: '', analysisUrl: '', country: 'BR', language: 'pt-BR' },
   })
 
   const country = watch('country')
@@ -71,13 +74,12 @@ export function StepUrl({ onComplete }: StepUrlProps) {
   async function onSubmit(values: FormValues) {
     setLoading(true)
     setServerError(null)
-    setSalesPageUrl(null)
 
     try {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
+        body: JSON.stringify({ url: values.analysisUrl, country: values.country, language: values.language }),
       })
 
       const json = await res.json()
@@ -88,11 +90,7 @@ export function StepUrl({ onComplete }: StepUrlProps) {
       }
 
       const data = json.data as PageAnalysisResult
-      if (data.salesPageUrl) {
-        setSalesPageUrl(data.salesPageUrl)
-      }
-
-      onComplete(data, values.url, values.country, values.language)
+      onComplete(data, values.destinationUrl, values.analysisUrl, values.country, values.language)
     } catch {
       setServerError('Erro de conexão. Verifique sua internet e tente novamente.')
     } finally {
@@ -104,24 +102,45 @@ export function StepUrl({ onComplete }: StepUrlProps) {
     <Card>
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {/* URL */}
+          {/* Destination URL */}
           <div className="space-y-1.5">
-            <Label htmlFor="url" className="flex items-center gap-1.5">
-              <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-              URL da Página de Vendas
+            <Label htmlFor="destinationUrl" className="flex items-center gap-1.5">
+              <Link className="h-3.5 w-3.5 text-muted-foreground" />
+              Link de Destino (URL do Anúncio)
             </Label>
             <Input
-              id="url"
-              placeholder="https://produto.com.br/pagina-de-vendas"
-              {...register('url')}
+              id="destinationUrl"
+              placeholder="URL para onde o visitante vai ao clicar no anúncio"
+              {...register('destinationUrl')}
               disabled={loading}
-              className={errors.url ? 'border-red-500 focus-visible:ring-red-500' : ''}
+              className={errors.destinationUrl ? 'border-red-500 focus-visible:ring-red-500' : ''}
             />
-            {errors.url && (
-              <p className="text-xs text-red-500">{errors.url.message}</p>
+            {errors.destinationUrl && (
+              <p className="text-xs text-red-500">{errors.destinationUrl.message}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              Cole a URL completa da sua página de vendas ou hotlink de afiliado.
+              Pode ser sua presell, link de afiliado ou página de vendas
+            </p>
+          </div>
+
+          {/* Analysis URL */}
+          <div className="space-y-1.5">
+            <Label htmlFor="analysisUrl" className="flex items-center gap-1.5">
+              <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+              Link para Análise (Página de Vendas do Produto)
+            </Label>
+            <Input
+              id="analysisUrl"
+              placeholder="URL da página de vendas do produto para extrair informações"
+              {...register('analysisUrl')}
+              disabled={loading}
+              className={errors.analysisUrl ? 'border-red-500 focus-visible:ring-red-500' : ''}
+            />
+            {errors.analysisUrl && (
+              <p className="text-xs text-red-500">{errors.analysisUrl.message}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Cole a URL da página de vendas do produtor para criar anúncios mais precisos
             </p>
           </div>
 
@@ -173,17 +192,6 @@ export function StepUrl({ onComplete }: StepUrlProps) {
               )}
             </div>
           </div>
-
-          {/* Sales page redirect info */}
-          {salesPageUrl && (
-            <div className="flex items-start gap-2 rounded-md border border-indigo-500/30 bg-indigo-500/10 px-3 py-2.5 text-xs text-indigo-300">
-              <ArrowRight className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-              <span>
-                <span className="font-medium">Analisando página de vendas:</span>{' '}
-                <span className="break-all opacity-80">{salesPageUrl}</span>
-              </span>
-            </div>
-          )}
 
           {/* Server error */}
           {serverError && (
