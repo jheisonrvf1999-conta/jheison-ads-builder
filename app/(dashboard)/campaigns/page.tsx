@@ -82,13 +82,6 @@ export default async function CampaignsPage({ searchParams }: PageProps) {
           <select
             name="status"
             defaultValue={status ?? ''}
-            onChange={(e) => {
-              const f = new URLSearchParams(window.location.search)
-              if (e.target.value) f.set('status', e.target.value)
-              else f.delete('status')
-              f.delete('page')
-              window.location.search = f.toString()
-            }}
             className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
           >
             <option value="">Todos os status</option>
