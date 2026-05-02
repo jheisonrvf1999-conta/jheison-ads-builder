@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, Globe, Search } from 'lucide-react'
+import { Loader2, Globe, Search, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -52,6 +52,7 @@ interface StepUrlProps {
 export function StepUrl({ onComplete }: StepUrlProps) {
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
+  const [salesPageUrl, setSalesPageUrl] = useState<string | null>(null)
 
   const {
     register,
@@ -70,6 +71,7 @@ export function StepUrl({ onComplete }: StepUrlProps) {
   async function onSubmit(values: FormValues) {
     setLoading(true)
     setServerError(null)
+    setSalesPageUrl(null)
 
     try {
       const res = await fetch('/api/analyze', {
@@ -85,7 +87,12 @@ export function StepUrl({ onComplete }: StepUrlProps) {
         return
       }
 
-      onComplete(json.data as PageAnalysisResult, values.url, values.country, values.language)
+      const data = json.data as PageAnalysisResult
+      if (data.salesPageUrl) {
+        setSalesPageUrl(data.salesPageUrl)
+      }
+
+      onComplete(data, values.url, values.country, values.language)
     } catch {
       setServerError('Erro de conexão. Verifique sua internet e tente novamente.')
     } finally {
@@ -166,6 +173,17 @@ export function StepUrl({ onComplete }: StepUrlProps) {
               )}
             </div>
           </div>
+
+          {/* Sales page redirect info */}
+          {salesPageUrl && (
+            <div className="flex items-start gap-2 rounded-md border border-indigo-500/30 bg-indigo-500/10 px-3 py-2.5 text-xs text-indigo-300">
+              <ArrowRight className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              <span>
+                <span className="font-medium">Analisando página de vendas:</span>{' '}
+                <span className="break-all opacity-80">{salesPageUrl}</span>
+              </span>
+            </div>
+          )}
 
           {/* Server error */}
           {serverError && (

@@ -10,8 +10,8 @@ const createCampaignSchema = z.object({
   category: z.string().min(1, 'Categoria obrigatória'),
   objective: z.string().min(1, 'Objetivo obrigatório'),
   benefits: z.array(z.string()).min(1, 'Ao menos um benefício é obrigatório'),
-  differentials: z.array(z.string()).min(1, 'Ao menos um diferencial é obrigatório'),
-  offer: z.string().min(1, 'Oferta obrigatória'),
+  differentials: z.array(z.string()),
+  offer: z.string().optional().default(''),
   affiliateUrl: z.string().url('URL do afiliado inválida'),
   keywords: z.array(
     z.object({

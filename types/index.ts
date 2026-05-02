@@ -10,6 +10,7 @@ export interface User {
 
 export interface PageAnalysisResult {
   url: string
+  salesPageUrl?: string
   title: string
   metaDescription: string
   h1: string[]
